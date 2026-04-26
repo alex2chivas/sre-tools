@@ -33,7 +33,7 @@ MJID: 4210  CHID: H450  IP: 10.5.22.200
 
 ## What I learned
 
-This was my first C program. Concepts applied:
+Concepts applied:
 
 - Structs and arrays of structs
 - Pointers, malloc, and free (heap memory management)
