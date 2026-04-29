@@ -13,16 +13,36 @@
 #include<unistd.h>
 #include<sys/wait.h>
 #include<string.h>
+#include<signal.h>
+char cwd[256];
+
+
+void handle_signal(int sig) {
+	switch (sig) {
+		case SIGINT:
+			getcwd(cwd, 256); // refresh prompt after cd
+			printf("\n%s scone-shell> ", cwd);
+			fflush(stdout);
+			break;
+		case SIGTERM:
+			printf("Shutting down...\n");
+			exit(0);
+			break;
+	}
+}
 
 int main() {
 	char input[256];
-	char cwd[256];
+
+	signal(SIGINT, handle_signal);
+	signal(SIGTERM, handle_signal);
 
 	while(1) {
 		getcwd(cwd, 256); // refresh prompt after cd
 		printf("%s scone-shell> ", cwd);
 		fgets(input, 256, stdin);
 		input[strcspn(input, "\n")] = '\0';
+
 
 		if (input[0] == '\0') {
 			continue;

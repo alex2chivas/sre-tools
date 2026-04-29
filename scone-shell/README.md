@@ -39,6 +39,8 @@ Command not found: invalidcommand
 - Built-in `exit`
 - Working directory displayed in prompt
 - Error handling for invalid commands and empty input
+- Signal handling (SIGINT, SIGTERM)
+- Ctrl+C doesn't kill the shell, graceful shutdown on SIGTERM
 
 ## How it works
 
@@ -59,3 +61,6 @@ Command not found: invalidcommand
 - Built-in vs external command handling
 - Why cd must be a shell builtin (child can't change parent's directory)
 - Input parsing with strtok for variable-length arguments
+- Signal handling with signal() and custom handler functions
+- How signal registration persists in the kernel for the life of the process
+- fflush(stdout) to force buffered output to screen
