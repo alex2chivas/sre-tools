@@ -2,10 +2,28 @@
 
 A minimal Unix shell written in C. Demonstrates how shells work under the hood using fork, exec, and wait — the same system calls that bash uses to run every command.
 
+## Project Structure
+
+This project is split into multiple files following standard C conventions:
+
+```
+scone-shell.c       Main loop, input parsing
+signal_handler.c/h  SIGINT and SIGTERM handling
+builtins.c/h        cd and exit builtins
+executor.c/h        fork/exec/wait logic
+Makefile            Build automation
+```
+
 ## Compile
 
 ```bash
-gcc -o scone-shell scone-shell.c
+make scone-shell
+```
+
+Or manually:
+
+```bash
+gcc -o scone-shell scone-shell.c signal_handler.c builtins.c executor.c
 ```
 
 ## Usage
@@ -48,7 +66,7 @@ Command not found: invalidcommand
 2. Read user input
 3. Parse into arguments using strtok
 4. Check for builtins (exit, cd) — handle without forking
-5. Fork a child process
+5. Fork a child process via executor module
 6. Child: exec the command (replaces itself with the program)
 7. Parent: wait for child to finish
 8. Loop back to step 1
@@ -64,3 +82,7 @@ Command not found: invalidcommand
 - Signal handling with signal() and custom handler functions
 - How signal registration persists in the kernel for the life of the process
 - fflush(stdout) to force buffered output to screen
+- Multi-file C project structure with header files
+- Separating declarations (.h) from definitions (.c)
+- Using extern for variables shared across files
+- Building multi-file projects with Makefile

@@ -14,22 +14,12 @@
 #include<sys/wait.h>
 #include<string.h>
 #include<signal.h>
-char cwd[256];
+#include"signal_handler.h"
+#include"builtins.h"
+#include"executor.h"
 
+char cwd[256]; // used inside the signal_handler
 
-void handle_signal(int sig) {
-	switch (sig) {
-		case SIGINT:
-			getcwd(cwd, 256); // refresh prompt after cd
-			printf("\n%s scone-shell> ", cwd);
-			fflush(stdout);
-			break;
-		case SIGTERM:
-			printf("Shutting down...\n");
-			exit(0);
-			break;
-	}
-}
 
 int main() {
 	char input[256];
@@ -60,33 +50,15 @@ int main() {
 		}
 		args[i] = NULL; // exec requires NULL-terminated array
 
-		if (strcmp(args[0], "exit") == 0) {
-			break;
+		if (is_exit(args[0])) {
+			break; // leaves the while loop
+		}
+		if (strcmp(args[0], "cd") ==0) {
+			run_cd(args[1]);
+			continue;
 		}
 
-		if (strcmp(args[0], "cd") == 0) {
-			if (args[1] == NULL) {
-				printf("Usage: cd <directory>\n");
-			} else {
-				if (chdir(args[1]) != 0) {
-					printf("Directory not found: %s\n", args[1]); 
-				}
-			}
-			continue; // Skip fork/exec for builtins
-		}
-
-
-		pid_t pid = fork();
-		if (pid == 0) {
-			execvp(args[0], args);  // Will replace child process with command. If something returns will go down to printf
-						// and exit();  
-			printf("Command not found: %s\n", args[0]);
-			exit(1); // kill child so it doesn't become a second shell
-
-		} else {
-			wait(NULL);
-		}
-
+		run_command(args);
 
 	}
 
