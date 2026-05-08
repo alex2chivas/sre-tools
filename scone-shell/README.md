@@ -1,17 +1,16 @@
 # scone-shell
 
-A minimal Unix shell written in C. Demonstrates how shells work under the hood using fork, exec, and wait — the same system calls that bash uses to run every command.
+A minimal Unix shell written in C. Demonstrates how shells work under the hood using fork, exec, wait, pipes, and signal handling — the same system calls bash uses for every command you run.
 
 ## Project Structure
 
-This project is split into multiple files following standard C conventions:
-
 ```
-scone-shell.c       Main loop, input parsing
-signal_handler.c/h  SIGINT and SIGTERM handling
-builtins.c/h        cd and exit builtins
-executor.c/h        fork/exec/wait logic
-Makefile            Build automation
+scone-shell.c        Main loop, input parsing, pipe detection
+signal_handler.c/h   SIGINT and SIGTERM handling
+builtins.c/h         cd and exit builtins
+executor.c/h         fork/exec/wait for single commands
+pipe_executor.c/h    Pipe support (cmd1 | cmd2)
+Makefile             Build automation
 ```
 
 ## Compile
@@ -23,7 +22,7 @@ make scone-shell
 Or manually:
 
 ```bash
-gcc -o scone-shell scone-shell.c signal_handler.c builtins.c executor.c
+gcc -o scone-shell scone-shell.c signal_handler.c builtins.c executor.c pipe_executor.c
 ```
 
 ## Usage
@@ -35,24 +34,23 @@ gcc -o scone-shell scone-shell.c signal_handler.c builtins.c executor.c
 ## Example
 
 ```
-/home/alexisf scone-shell> ls -la
+/home/user scone-shell> ls -la
 total 16
-drwxr-xr-x. 2 alexisf alexisf 4096 Apr 28 10:50 .
-drwxr-xr-x. 3 alexisf alexisf 4096 Apr 23 09:42 ..
+drwxr-xr-x. 2 user user 4096 Apr 28 10:50 .
+drwxr-xr-x. 3 user user 4096 Apr 23 09:42 ..
 
-/home/alexisf scone-shell> cd /tmp
-/tmp scone-shell> pwd
-/tmp
+/home/user scone-shell> ls -la | grep .c
+-rw-r--r--. 1 user user  341 May  6 07:03 builtins.c
+-rw-r--r--. 1 user user  285 May  8 12:02 executor.c
 
-/tmp scone-shell> invalidcommand
-Command not found: invalidcommand
-
+/home/user scone-shell> cd /tmp
 /tmp scone-shell> exit
 ```
 
 ## Features
 
 - Runs external commands with arguments (ls -la, cat file.txt, etc.)
+- Pipe support for two commands (cmd1 | cmd2)
 - Built-in `cd` with directory validation
 - Built-in `exit`
 - Working directory displayed in prompt
@@ -62,6 +60,8 @@ Command not found: invalidcommand
 
 ## How it works
 
+For a normal command:
+
 1. Print prompt with current directory
 2. Read user input
 3. Parse into arguments using strtok
@@ -69,7 +69,16 @@ Command not found: invalidcommand
 5. Fork a child process via executor module
 6. Child: exec the command (replaces itself with the program)
 7. Parent: wait for child to finish
-8. Loop back to step 1
+
+For a piped command (cmd1 | cmd2):
+
+1. Detect '|' in input before parsing
+2. Split input on '|', then split each side on spaces
+3. Create a pipe with pipe()
+4. Fork once for cmd1 — redirect stdout to pipe write end with dup2
+5. Fork again for cmd2 — redirect stdin from pipe read end with dup2
+6. Both children exec their commands
+7. Parent closes both pipe ends and waits for both children
 
 ## What I learned
 
@@ -82,6 +91,9 @@ Command not found: invalidcommand
 - Signal handling with signal() and custom handler functions
 - How signal registration persists in the kernel for the life of the process
 - fflush(stdout) to force buffered output to screen
+- Pipe creation and bidirectional file descriptors (read end / write end)
+- File descriptor redirection with dup2()
+- Why dup2 must come before close in the redirection sequence
 - Multi-file C project structure with header files
 - Separating declarations (.h) from definitions (.c)
 - Using extern for variables shared across files

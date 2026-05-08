@@ -17,6 +17,7 @@
 #include"signal_handler.h"
 #include"builtins.h"
 #include"executor.h"
+#include"pipe_executor.h"
 
 char cwd[256]; // used inside the signal_handler
 
@@ -37,6 +38,12 @@ int main() {
 		if (input[0] == '\0') {
 			continue;
 		}
+
+		if (strchr(input, '|') != NULL) {
+			run_piped_command(input);
+			continue;
+		}
+
 
 		char *args[64];
 		int i = 0;
